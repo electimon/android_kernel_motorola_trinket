@@ -398,6 +398,7 @@ struct smb_charger {
 	struct mutex		smb_lock;
 	struct mutex		ps_change_lock;
 	struct mutex		dr_lock;
+	struct mutex            adc_lock;
 	struct mutex		irq_status_lock;
 	struct mutex		adc_lock;
 	spinlock_t		typec_pr_lock;
