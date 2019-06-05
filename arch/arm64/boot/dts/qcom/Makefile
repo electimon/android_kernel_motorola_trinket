@@ -16,11 +16,16 @@ dtbo-$(CONFIG_DOHA_DTB) += \
 dtbo-$(CONFIG_SOFIA_DTB) += \
 	trinket-sofia-evb1-overlay.dtbo \
 
+dtbo-$(CONFIG_SOFIAP_DTB) += \
+	trinket-sofiap-evb-overlay.dtbo \
+
 
 trinket-doha-evt1-overlay.dtbo-base :=  trinket-doha-base.dtb
 trinket-doha-evt2-overlay.dtbo-base :=  trinket-doha-base.dtb
 
 trinket-sofia-evb1-overlay.dtbo-base :=  trinket-sofia-base.dtb
+
+trinket-sofiap-evb-overlay.dtbo-base :=  trinket-sofiap-base.dtb
 else
 dtb-$(CONFIG_ARCH_SM6150)	+= sa6155-adp-star.dtb \
 	sa6155p-adp-star.dtb \
