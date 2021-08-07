@@ -36,13 +36,17 @@ static struct work_struct input_boost_work;
 
 static bool input_boost_enabled;
 
-static unsigned int input_boost_ms = 40;
+static unsigned int input_boost_ms = 1500;
 module_param(input_boost_ms, uint, 0644);
 
-static unsigned int sched_boost_on_input;
+static unsigned int sched_boost_on_input = 2; // CONSERVATIVE_BOOST
 module_param(sched_boost_on_input, uint, 0644);
 
 static bool sched_boost_active;
+
+static unsigned long input_boost_freqs[8] = {
+	1017000, 1017000, 1017000, 1017000, 0, 0, 0, 0
+};
 
 static struct delayed_work input_boost_rem;
 static u64 last_input_time;
@@ -326,6 +330,10 @@ static int cpu_boost_init(void)
 	for_each_possible_cpu(cpu) {
 		s = &per_cpu(sync_info, cpu);
 		s->cpu = cpu;
+		s->input_boost_freq = input_boost_freqs[cpu];
+
+		if (!input_boost_enabled)
+			input_boost_enabled = input_boost_freqs[cpu] > 0;
 	}
 	cpufreq_register_notifier(&boost_adjust_nb, CPUFREQ_POLICY_NOTIFIER);
 
