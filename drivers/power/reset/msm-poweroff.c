@@ -66,7 +66,7 @@ static void scm_disable_sdi(void);
  * So the SDI cannot be re-enabled when it already by-passed.
  */
 static int download_mode = 1;
-static bool force_warm_reboot;
+static bool force_warm_reboot = 1;
 
 #ifdef CONFIG_QCOM_DLOAD_MODE
 #define EDL_MODE_PROP "qcom,msm-imem-emergency_download_mode"
@@ -290,10 +290,7 @@ static void halt_spmi_pmic_arbiter(void)
 static int debug_sys_restart_mode;
 static int __init set_sys_restart_mode(char *str)
 {
-	if (!strcmp(str, "warm"))
-		debug_sys_restart_mode = DEBUG_SYS_RESETART_WARM;
-	else if (!strcmp(str, "panic"))
-		debug_sys_restart_mode = DEBUG_SYS_RESETART_PANIC;
+	debug_sys_restart_mode = DEBUG_SYS_RESETART_WARM;
 	pr_info("sys_restart_mode is set to %d\n", debug_sys_restart_mode);
 	return 1;
 }
@@ -302,38 +299,27 @@ __setup("sys_restart_mode=", set_sys_restart_mode);
 
 static void msm_restart_prepare(const char *cmd)
 {
-	bool need_warm_reset = false;
+	bool need_warm_reset = true;
 #ifdef CONFIG_QCOM_DLOAD_MODE
-	if (debug_sys_restart_mode == DEBUG_SYS_RESETART_PANIC) {
-		in_panic = 1;
-		pr_info("force system enter into ramdump for debug\n");
-	}
-
+	/* Write download mode flags if we're panic'ing
+	 * Write download mode flags if restart_mode says so
+	 * Kill download mode if master-kill switch is set
+	 */
+	if (!is_kdump_kernel())
+ 		set_dload_mode(download_mode &&
+			(in_panic || restart_mode == RESTART_DLOAD));
 #endif
 
-	if (qpnp_pon_check_hard_reset_stored()) {
-		/* Set warm reset as true when device is in dload mode */
-		if (get_dload_mode() ||
-			((cmd != NULL && cmd[0] != '\0') &&
-			!strcmp(cmd, "edl")))
-			need_warm_reset = true;
-	} else {
-		need_warm_reset = (get_dload_mode() ||
-				(cmd != NULL && cmd[0] != '\0'));
-	}
+	need_warm_reset = true;
 
 	if (force_warm_reboot)
 		pr_info("Forcing a warm reset of the system\n");
-		
+
 #ifdef CONFIG_QCOM_PRESERVE_MEM
 	need_warm_reset = true;
 #endif
 
-	/* Hard reset the PMIC unless memory contents must be maintained. */
-	if (force_warm_reboot || need_warm_reset || in_panic)
-		qpnp_pon_system_pwr_off(PON_POWER_OFF_WARM_RESET);
-	else
-		qpnp_pon_system_pwr_off(PON_POWER_OFF_HARD_RESET);
+	qpnp_pon_system_pwr_off(PON_POWER_OFF_WARM_RESET);
 
 	if (cmd != NULL) {
 		if (!strncmp(cmd, "bootloader", 10)) {
