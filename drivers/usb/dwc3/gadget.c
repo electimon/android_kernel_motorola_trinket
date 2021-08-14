@@ -778,7 +778,6 @@ static int __dwc3_gadget_ep_enable(struct dwc3_ep *dep,
 
 		if (usb_endpoint_xfer_control(desc))
 			goto out;
-		}
 
 		/* Initialize the TRB ring */
 		memset(dep->trb_pool, 0,
