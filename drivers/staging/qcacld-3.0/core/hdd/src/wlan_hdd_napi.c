@@ -116,8 +116,7 @@ int hdd_napi_create(void)
 	}
 
 	feature_flags = QCA_NAPI_FEATURE_CPU_CORRECTION |
-		QCA_NAPI_FEATURE_IRQ_BLACKLISTING |
-		QCA_NAPI_FEATURE_CORE_CTL_BOOST;
+		QCA_NAPI_FEATURE_IRQ_BLACKLISTING;
 
 	rc = hif_napi_create(hif_ctx, hdd_napi_poll,
 			     QCA_NAPI_BUDGET,
