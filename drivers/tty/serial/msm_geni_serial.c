@@ -315,7 +315,7 @@ static int wait_for_transfers_inflight(struct uart_port *uport)
 	geni_status = geni_read_reg_nolog(uport->membase, SE_GENI_STATUS);
 	/* Possible stop rx is called before this. */
 	if (!(geni_status & S_GENI_CMD_ACTIVE))
-		return;
+		return 0;
 
 	while (iter < WAIT_XFER_MAX_ITER) {
 		if (check_transfers_inflight(uport)) {
