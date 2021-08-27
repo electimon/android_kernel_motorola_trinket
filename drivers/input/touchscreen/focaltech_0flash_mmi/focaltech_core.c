@@ -233,11 +233,10 @@ void fts_hid2std(void)
 
 static int fts_get_chip_types(
     struct fts_ts_data *ts_data,
-    u8 id_h, u8 id_l, bool fw_valid)
+    u8 id_h, u8 id_l, bool fw_valid, struct ft_chip_t *ctype)
 {
     int i = 0;
-    struct ft_chip_t ctype[] = FTS_CHIP_TYPE_MAPPING;
-    u32 ctype_entries = sizeof(ctype) / sizeof(struct ft_chip_t);
+    u32 ctype_entries = sizeof(*ctype) / sizeof(struct ft_chip_t);
 
     if ((0x0 == id_h) || (0x0 == id_l)) {
         FTS_ERROR("id_h/id_l is 0");
@@ -263,6 +262,24 @@ static int fts_get_chip_types(
 
     ts_data->ic_info.ids = ctype[i];
     return 0;
+}
+
+static int fts_get_chip_types_bridge(
+    struct fts_ts_data *ts_data,
+    u8 id_h, u8 id_l, bool fw_valid)
+{
+    if (strcmp("ft8009", fts_data->pdata->chip_name) == 0) {
+        struct ft_chip_t ctype[] = {{0x17, 0x80, 0x09, 0x80, 0x09, 0x80, 0xA9, 0x00, 0x00}};
+        return fts_get_chip_types(ts_data, id_h, id_l, fw_valid, ctype);
+    } else if (strcmp("ft8756", fts_data->pdata->chip_name) == 0) {
+        struct ft_chip_t ctype[] = {{0x15, 0x87, 0x56, 0x87, 0x56, 0xF7, 0xA6, 0x00, 0x00}};
+        return fts_get_chip_types(ts_data, id_h, id_l, fw_valid, ctype);
+    } else if (strcmp("ft8719", fts_data->pdata->chip_name) == 0) {
+        struct ft_chip_t ctype[] = {{0x0D, 0x87, 0x19, 0x87, 0x19, 0x87, 0xA9, 0x87, 0xB9}};
+        return fts_get_chip_types(ts_data, id_h, id_l, fw_valid, ctype);
+    } else {
+        return -ENODATA;
+    }
 }
 
 static int fts_read_bootid(struct fts_ts_data *ts_data, u8 *id)
@@ -327,7 +344,7 @@ static int fts_get_ic_information(struct fts_ts_data *ts_data)
             continue;
         }
 
-        ret = fts_get_chip_types(ts_data, chip_id[0], chip_id[1], INVALID);
+        ret = fts_get_chip_types_bridge(ts_data, chip_id[0], chip_id[1], INVALID);
         if (ret < 0) {
             FTS_DEBUG("can't get ic informaton,retry:%d", cnt);
             continue;
@@ -1612,6 +1629,15 @@ static int fts_parse_dt(struct device *dev, struct fts_ts_platform_data *pdata)
 	} else {
 		FTS_INFO("panel supplier is %s", (char *)ts_data->panel_supplier);
 	}
+
+    ret = of_property_read_string(np, "focaltech,name",
+            &pdata->chip_name);
+    if (ret < 0) {
+        pdata->chip_name = NULL;
+        FTS_ERROR("Unable to read chip name\n");
+    } else {
+        FTS_INFO("chip name is %s", pdata->chip_name);
+    }
 
     FTS_FUNC_EXIT();
     return 0;
